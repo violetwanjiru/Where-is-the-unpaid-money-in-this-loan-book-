@@ -1,4 +1,4 @@
-# Is loan delinquency concentrated or widespread, and where should collections focus first?
+## Is loan delinquency concentrated or widespread, and where should collections focus first?
 
 **[View the live dashboard](https://violetwanjiru.github.io/loan-book-delinquency-concentrated-where-should-collections-focus-/)** | **[Read the SQL](lending_portfolio_analysis.sql)**
 
