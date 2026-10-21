@@ -17,7 +17,7 @@ The data covers 840 customers and loans funded from 30 March to 30 May 2026. Amo
 
 ## Approach
 
-The analysis is one commented MySQL script, [lending_portfolio_analysis.sql](lending_portfolio_analysis.sql), and every figure here traces to a query in it. Four decisions shaped the numbers:
+The analysis is one commented MySQL script, [lending_portfolio_analysis.sql](https://github.com/violetwanjiru/Where-is-the-unpaid-money-in-this-loan-book-/blob/main/Loan_Portfolio_Script.sql), and every figure here traces to a query in it. Four decisions shaped the numbers:
 
 - **Dates.** Loan dates arrived as text in UTC. I backed up the table, validated the formats, and converted them. Months are reported in Nairobi time, which moves loans funded near midnight at month-end into the next month.
 - **Unpaid amount.** I used the recorded shortfall as supplied. It differs from principal minus repaid on 121 of 1,868 loans, so I report it as recorded and state the definition.
