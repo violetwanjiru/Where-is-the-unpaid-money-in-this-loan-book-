@@ -1,0 +1,1 @@
+# loan-book-delinquency-concentrated-where-should-collections-focus-
