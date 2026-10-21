@@ -4,215 +4,184 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Is loan delinquency concentrated or widespread, and where should collections focus first?</title>
-<meta name="description" content="A SQL analysis of 1,868 digital loans: disbursements, repayment, arrears and customer behaviour, with the decision it supports.">
+<meta name="description" content="Loan book dashboard: 1,868 digital loans, disbursements, repayment, delinquency and customer behaviour.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--ink:#0f1b2d;--muted:#566476;--paper:#f5f7f9;--panel:#fff;--line:#d8dee5;--late:#b8432f;--ok:#1f6f5c;--dot:#c3ccd6;--bar:#33475f}
-@media (prefers-color-scheme:dark){:root{--ink:#e8edf3;--muted:#9aa8b8;--paper:#0e1622;--panel:#152131;--line:#27374a;--late:#e0705a;--ok:#4cb398;--dot:#31435a;--bar:#7f98b4}}
+:root{--ink:#0f1b2d;--muted:#566476;--paper:#eef1f4;--panel:#fff;--line:#d8dee5;--late:#b8432f;--ok:#1f6f5c;--dot:#c3ccd6;--bar:#33475f}
+@media (prefers-color-scheme:dark){:root{--ink:#e8edf3;--muted:#9aa8b8;--paper:#0b121c;--panel:#142030;--line:#27374a;--late:#e0705a;--ok:#4cb398;--dot:#31435a;--bar:#7f98b4}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--paper);color:var(--ink);font:400 1rem/1.6 "Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
-main{max-width:1040px;margin:0 auto;padding:3rem 1.25rem 4rem}
-h1,h2{font-family:Newsreader,Georgia,serif;font-weight:600;line-height:1.15;margin:0}
-h1{font-size:clamp(1.8rem,4.2vw,2.7rem);max-width:26ch;letter-spacing:-.01em}
-h2{font-size:1.6rem;margin-bottom:.4rem}
-p{margin:.5rem 0;max-width:68ch}
-.scope{color:var(--muted);margin-top:1rem}
-.decision{border-left:4px solid var(--late);padding:.2rem 0 .2rem 1.25rem;margin:2rem 0 2.5rem;max-width:72ch;font-size:1.12rem}
-.decision b{display:block;font-family:Newsreader,Georgia,serif;font-size:1.05rem;margin-bottom:.35rem;color:var(--muted);font-weight:500}
-section{border-top:1px solid var(--line);padding-top:2rem;margin-top:2.5rem}
-.lead{color:var(--muted)}
-.hero-grid{display:flex;flex-wrap:wrap;gap:2px;margin:1.25rem 0 .75rem;max-width:760px}
-.hero-grid i{width:9px;height:9px;background:var(--dot);border-radius:1px}
-.hero-grid i.late{background:var(--late)}
-.legend{display:flex;gap:1.25rem;flex-wrap:wrap;color:var(--muted);font-size:.9rem}
-.legend span::before{content:"";display:inline-block;width:.7rem;height:.7rem;margin-right:.4rem;background:var(--dot);vertical-align:-1px}
-.legend .l::before{background:var(--late)}
-.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1.5rem 1.25rem;margin:1.5rem 0 0}
-.facts div{border-top:2px solid var(--ink);padding-top:.5rem}
-.facts dt{color:var(--muted);font-size:.88rem}
-.facts dd{margin:0;font:600 1.7rem/1.2 Newsreader,Georgia,serif}
-.facts small{display:block;font:400 .82rem/1.4 "Public Sans",system-ui,sans-serif;color:var(--muted)}
-.bars{margin:1rem 0}
-.row{display:grid;grid-template-columns:150px 1fr 150px;gap:.75rem;align-items:center;padding:.35rem 0;font-size:.93rem}
-.track{background:var(--line);height:14px;border-radius:2px;overflow:hidden}
-.fill{height:100%;background:var(--bar)}
-.fill.late{background:var(--late)}.fill.ok{background:var(--ok)}
-.num{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
-.tabs{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:.5rem 0}
-.tabs button{font:inherit;font-size:.9rem;padding:.45rem .9rem;border:0;background:var(--panel);color:var(--ink);cursor:pointer}
-.tabs button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
-.tabs button:focus-visible,a:focus-visible{outline:3px solid var(--late);outline-offset:2px}
-.par{font:600 2.4rem/1.1 Newsreader,Georgia,serif;margin:.25rem 0}
-.tablewrap{overflow-x:auto;margin:1rem 0}
-table{border-collapse:collapse;width:100%;font-size:.92rem}
-th,td{text-align:left;padding:.5rem .75rem;border-bottom:1px solid var(--line);white-space:nowrap}
-th{font-weight:600;color:var(--muted)}
-td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
-.tag{font-size:.82rem;padding:.1rem .5rem;border-radius:3px;border:1px solid var(--line)}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 .95rem/1.55 "Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1180px;margin:0 auto;padding:1.75rem 1.1rem 3rem}
+h1,h2,.v{font-family:Newsreader,Georgia,serif;font-weight:600}
+h1{font-size:clamp(1.55rem,3.2vw,2.15rem);line-height:1.15;margin:0;max-width:24ch}
+h2{font-size:1.12rem;margin:0 0 .15rem}
+.sub{color:var(--muted);font-size:.85rem;margin:0 0 .6rem}
+.top{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:1.5rem;align-items:start;margin-bottom:1.25rem}
+.answer{font-size:1.02rem;margin:.7rem 0 .2rem}
+.meta{color:var(--muted);font-size:.84rem;margin:0}
+.decision{border-left:4px solid var(--late);padding-left:1rem;font-size:.93rem}
+.decision b{display:block;font-family:Newsreader,Georgia,serif;font-size:1rem;color:var(--muted);font-weight:500;margin-bottom:.2rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.75rem;margin-bottom:.75rem}
+.k{background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--bar);border-radius:6px;padding:.7rem .9rem}
+.k.late{border-top-color:var(--late)}.k.ok{border-top-color:var(--ok)}
+.k .l{color:var(--muted);font-size:.8rem}
+.k .v{font-size:1.95rem;line-height:1.15;display:block}
+.k .s{color:var(--muted);font-size:.78rem}
+.grid{display:grid;gap:.75rem;margin-bottom:.75rem}
+.g2{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}
+.g3{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
+.p{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:.9rem 1rem;min-width:0}
+svg{width:100%;height:auto;display:block}
+.gl{stroke:var(--line);stroke-width:1}
+.ax{fill:var(--muted);font:11px "Public Sans",sans-serif}
+.b{fill:var(--bar)}.bp{fill:var(--dot)}.bl{fill:var(--late)}
+.ln{fill:none;stroke:var(--late);stroke-width:2.5}.dt{fill:var(--late)}
+.lb{fill:var(--ink);font:600 11.5px "Public Sans",sans-serif}
+.lw{fill:var(--paper);font:600 11.5px "Public Sans",sans-serif}
+.lr{fill:var(--late);font:600 11px "Public Sans",sans-serif}
+.key{display:flex;gap:1rem;flex-wrap:wrap;color:var(--muted);font-size:.78rem;margin-top:.2rem}
+.key i{display:inline-block;width:.7rem;height:.7rem;margin-right:.35rem;vertical-align:-1px;background:var(--bar)}
+.key i.l{height:3px;background:var(--late);vertical-align:3px;width:1rem}
+.key i.pt{background:var(--dot)}
+.share{margin:.55rem 0}.share small{color:var(--muted);font-size:.78rem;display:block;margin-bottom:.15rem}
+.seg{display:flex;height:22px;border-radius:3px;overflow:hidden;background:var(--line)}
+.seg span{display:block;height:100%;font:600 .72rem/22px "Public Sans",sans-serif;color:var(--paper);padding-left:.35rem;white-space:nowrap}
+.seg .okc{background:var(--ok)}.seg .lc{background:var(--late)}
+.row{display:grid;grid-template-columns:1fr 90px;gap:.5rem;align-items:center;margin:.3rem 0;font-size:.85rem}
+.row .t{background:var(--line);height:12px;border-radius:2px;overflow:hidden;grid-column:1/-1}
+.row .f{height:100%;background:var(--bar)}.row .f.z{background:var(--late)}
+.row span:last-child{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.84rem}
+th,td{text-align:left;padding:.38rem .55rem;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--muted);font-weight:600}.r{text-align:right;font-variant-numeric:tabular-nums}
+.mini{display:inline-block;height:8px;background:var(--bar);border-radius:2px;vertical-align:middle}
+.tag{font-size:.74rem;padding:.05rem .45rem;border-radius:3px;border:1px solid var(--line)}
 .tag.review{border-color:var(--late);color:var(--late)}.tag.pass{border-color:var(--ok);color:var(--ok)}
-.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:2rem}
-footer{border-top:1px solid var(--line);margin-top:3rem;padding-top:1.25rem;color:var(--muted);font-size:.88rem}
+.note{color:var(--muted);font-size:.8rem;margin:.6rem 0 0}
+footer{color:var(--muted);font-size:.8rem;margin-top:1rem}
 a{color:var(--ink)}
-@media (max-width:640px){.row{grid-template-columns:1fr;gap:.2rem}.num{text-align:left}}
+@media (max-width:860px){.top,.g2,.g3{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <main>
 
-<header>
-  <h1>Is loan delinquency concentrated or widespread, and where should collections focus first?</h1>
-  <p class="lead" style="font-size:1.15rem;margin-top:1rem">Concentrated: 60 of 1,868 loans hold almost all the unpaid money. The rest of the book repays.</p>
-  <p class="scope">A SQL analysis of 1,868 digital loans to 840 customers, funded 30 March to 30 May 2026. Amounts are in shillings.</p>
+<header class="top">
+  <div>
+    <h1>Is loan delinquency concentrated or widespread, and where should collections focus first?</h1>
+    <p class="answer"><b>Concentrated.</b> 60 of 1,868 loans hold almost all the unpaid money. The rest of the book repays.</p>
+    <p class="meta">1,868 digital loans, 840 customers, funded 30 March to 30 May 2026. Amounts in shillings. Method, findings and recommendations are in the repository README.</p>
+  </div>
   <div class="decision">
     <b>The decision this supports</b>
-    Credit and Operations should work the 60 loans with Late status and leave lending to everyone else unchanged: those 60 loans, 3.2% of the book, hold 1,566,600.51 of the 1,566,602.78 shillings unpaid, while the 1,808 Paid loans hold 2.27 shillings between them, and the ten largest borrowers have repaid every loan they took. PAR30+ here is a proxy built on original principal and recorded days late, so read it as the size of the problem, not a precise balance. Operations should confirm outstanding balances on the 60 loans, and Credit should name the per-customer limit so a capped pilot for proven borrowers can be approved, before the next portfolio review.
+    Credit and Operations should work the 60 loans with Late status and leave lending to everyone else unchanged: those 60 loans, 3.2% of the book, hold almost all of the 1.57 million shillings unpaid, and the ten largest borrowers have repaid every loan they took. PAR30+ here is a proxy built on original principal and recorded days late, so read it as the size of the problem, not a precise balance. Operations should confirm outstanding balances on the 60 loans, and Credit should name the per-customer limit so a capped pilot for proven borrowers can be approved, before the next portfolio review.
   </div>
 </header>
 
-<section id="concentration" style="border-top:0;margin-top:0;padding-top:0">
-  <h2>Nearly all the unpaid money sits in 60 loans</h2>
-  <p class="lead">Each square is one of the 1,868 loans, ordered by status, not by date.</p>
-  <div class="hero-grid" id="grid" role="img" aria-label="1,868 squares, one per loan. 60 are Late and hold almost all unpaid money."></div>
-  <div class="legend"><span>1,808 Paid loans: 2.27 shillings unpaid in total</span><span class="l">60 Late loans: 1,566,600.51 shillings unpaid</span></div>
-  <dl class="facts">
-    <div><dt>Principal disbursed</dt><dd>69.33M</dd><small>1,868 loans, 840 customers</small></div>
-    <div><dt>Unpaid (shortfall)</dt><dd>1.57M</dd><small>2.26% of principal disbursed</small></div>
-    <div><dt>Customers who borrowed again</dt><dd>80.12%</dd><small>673 of 840 in about two months</small></div>
-    <div><dt>Loans with Paid status</dt><dd>96.8%</dd><small>1,808 of 1,868</small></div>
-  </dl>
-</section>
+<section class="kpis" id="kpis" aria-label="Key figures"></section>
 
-<section id="disbursements">
-  <h2>Disbursements: April and May are the comparable months</h2>
-  <p class="lead">April to May grew 0.95%. March holds only 56 loans because the data starts on 30 March, so April’s +1,856.56% is a base effect, not growth.</p>
-  <div class="bars" id="monthly"></div>
-</section>
-
-<section id="repayment">
-  <h2>Repayment: most loans are paid, but the ratio overstates recovery</h2>
-  <p class="lead">Repaid money is 1.04 times the money lent. It exceeds 1 because repayments include interest and fees, so it is not a recovery rate. Of 1,868 loans, 1,808 are Paid and 60 are Late.</p>
-  <div class="bars" id="status"></div>
-</section>
-
-<section id="delinquency">
-  <h2>Delinquency: the 31+ day bucket holds the unpaid money</h2>
-  <p class="lead">Buckets use recorded days late. The 31+ bucket holds 72 loans, but 12 of them are already settled: days late on a settled loan records how late the payment was, not a live arrear.</p>
-  <div class="bars" id="buckets"></div>
-  <div class="cols">
-    <div>
-      <p>Proxy PAR30+ (principal in loans 31+ days late, over all principal)</p>
-      <div class="tabs" role="group" aria-label="PAR definition">
-        <button id="b1" aria-pressed="true">All 31+ day loans</button>
-        <button id="b2" aria-pressed="false">Late status only</button>
-      </div>
-      <div class="par" id="par">3.37%</div>
-      <p class="num" id="parnote" style="text-align:left">2,339,048 of 69,328,930 shillings</p>
-    </div>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>31+ days late, by status</th><th class="r">Loans</th><th class="r">Principal</th><th class="r">Unpaid</th></tr></thead>
-        <tbody>
-          <tr><td>Late</td><td class="r">60</td><td class="r">2,065,592</td><td class="r">1,566,600.51</td></tr>
-          <tr><td>Paid</td><td class="r">12</td><td class="r">273,456</td><td class="r">0.32</td></tr>
-        </tbody>
-      </table>
-    </div>
+<section class="grid g2">
+  <div class="p">
+    <h2>Monthly disbursements and average loan size</h2>
+    <p class="sub">March holds only 56 loans (data starts 30 March), so April’s +1,856.56% is a base effect. April to May grew 0.95%.</p>
+    <div id="combo"></div>
+    <div class="key"><span><i></i>Principal disbursed</span><span><i class="pt"></i>Partial month</span><span><i class="l"></i>Average loan (right axis, shillings)</span></div>
+  </div>
+  <div class="p">
+    <h2>Where the unpaid money sits</h2>
+    <p class="sub">Share of loans against share of unpaid money, by recorded status.</p>
+    <div class="share"><small>Share of loans</small><div class="seg"><span class="okc" style="width:96.8%">Paid 96.8%</span><span class="lc" style="width:3.2%"></span></div></div>
+    <div class="share"><small>Share of unpaid money</small><div class="seg"><span class="okc" style="width:.4%"></span><span class="lc" style="width:99.6%">Late 100.0%</span></div></div>
+    <p class="note">The 1,808 Paid loans hold 2.27 shillings unpaid in total (under 0.01%). The 60 Late loans hold 1,566,600.51 shillings, which is 75.8% of their principal.</p>
+    <h2 style="margin-top:.9rem">Unpaid amount by loan status</h2>
+    <div id="ustat"></div>
   </div>
 </section>
 
-<section id="customers">
-  <h2>Customer behaviour: customers return, and the largest have repaid in full</h2>
-  <p class="lead">Customers who borrowed again returned after 26.41 days on average. The window is short, so longer gaps cannot appear and the true figure is likely higher. The ten largest borrowers took 55 loans worth 5,572,200 shillings (8.04% of principal). None has a Late loan or any shortfall.</p>
-  <div class="tablewrap">
-    <table>
-      <thead><tr><th>Borrower</th><th class="r">Loans</th><th class="r">Principal</th><th class="r">Repaid</th><th class="r">Late loans</th><th class="r">Unpaid</th><th class="r">Max days late</th></tr></thead>
-      <tbody id="top10"></tbody>
-    </table>
+<section class="grid g2">
+  <div class="p">
+    <h2>Loans by days late</h2>
+    <p class="sub">Recorded days late. The 31+ bucket holds 72 loans, but 12 are already settled: days late on a settled loan records how late the payment was, not a live arrear.</p>
+    <div id="bk"></div>
   </div>
-  <h2 style="font-size:1.25rem;margin-top:1.75rem">When customers were lent to again, was the previous loan unpaid?</h2>
-  <p class="lead">Across 1,028 re-lending events, none followed a loan that is still unpaid. The data has no payment dates, so payment before re-lending is confirmed only where the previous loan was paid on time.</p>
-  <div class="bars" id="relend"></div>
-</section>
-
-<section id="checks">
-  <h2>Data checks: nothing was deleted, and what was flagged is explained</h2>
-  <div class="tablewrap">
-    <table>
-      <thead><tr><th>Check</th><th class="r">Loans flagged</th><th>Status</th><th>Reading</th></tr></thead>
-      <tbody id="checkrows"></tbody>
-    </table>
+  <div class="p">
+    <h2>31+ days late, by status</h2>
+    <div class="tw"><table>
+      <thead><tr><th>Status</th><th class="r">Loans</th><th class="r">Principal</th><th class="r">Unpaid</th></tr></thead>
+      <tbody><tr><td>Late</td><td class="r">60</td><td class="r">2,065,592</td><td class="r">1,566,600.51</td></tr>
+      <tr><td>Paid</td><td class="r">12</td><td class="r">273,456</td><td class="r">0.32</td></tr></tbody>
+    </table></div>
+    <p class="note">Proxy PAR30+ is 3.37% of principal with all 72 loans, and 2.98% with the 60 Late loans only. The collections list is the 60 Late loans.</p>
+    <h2 style="margin-top:.9rem">When customers were lent to again</h2>
+    <p class="sub">Status of the previous loan at re-lending, 1,028 events.</p>
+    <div id="rl"></div>
   </div>
 </section>
 
-<section id="caveats">
-  <h2>Two caveats on reading this data</h2>
-  <p><b>Several fields are recorded, not measured at a date we choose.</b> Days late, shortfall and status come as at an extract date the file does not state, and repaid amounts include interest, fees and penalties. There are no payment dates or outstanding balances, so PAR30+ is a proxy.</p>
-  <p><b>The window is short and partly incomplete.</b> The data runs from 30 March to 30 May, and March is not comparable to later months. About two months cannot show seasonality, long repayment cycles or late-maturing defaults. A customer’s first loan in the window is not necessarily their first ever.</p>
+<section class="grid g3">
+  <div class="p">
+    <h2>Ten largest borrowers</h2>
+    <p class="sub">55 loans, 5,572,200 shillings (8.04% of principal). None has a Late loan or any unpaid amount.</p>
+    <div class="tw"><table>
+      <thead><tr><th>Borrower</th><th class="r">Loans</th><th>Principal</th><th class="r">Repaid</th><th class="r">Repaid / lent</th><th class="r">Late loans</th></tr></thead>
+      <tbody id="t10"></tbody>
+    </table></div>
+  </div>
+  <div class="p">
+    <h2>Data checks</h2>
+    <p class="sub">Nothing was deleted. Flags are reported with their reading.</p>
+    <div class="tw"><table><tbody id="ck"></tbody></table></div>
+    <p class="note"><b>Caveats.</b> Days late, shortfall and status are recorded at an unstated extract date, and repaid amounts include interest and fees, so PAR30+ is a proxy. The window is about two months, so seasonality and late-maturing defaults cannot be seen.</p>
+  </div>
 </section>
 
-<footer>
-  Built from the query outputs of <a href="lending_portfolio_analysis.sql">lending_portfolio_analysis.sql</a> (Q0 to Q8, MySQL 8). Figures are a snapshot of those outputs, not a live database connection. Months are in Nairobi time (EAT). Customers are shown by rank only.
-</footer>
-
+<footer>Snapshot of the query outputs of <a href="lending_portfolio_analysis.sql">lending_portfolio_analysis.sql</a> (Q0 to Q8, MySQL 8), not a live database connection. Months are in Nairobi time. Customers are shown by rank only.</footer>
 </main>
+
 <script>
-// Snapshot of query outputs (lending_portfolio_analysis.sql). Edit here to refresh the page.
-const D = {
-  monthly: [
-    {m:"March", loans:56,  principal:1719614,  note:"partial month: data starts 30 March"},
-    {m:"April", loans:903, principal:33645283, note:"+1,856.56% vs March (base effect)"},
-    {m:"May",   loans:909, principal:33964033, note:"+0.95% vs April"}
-  ],
-  buckets: [
-    {l:"Current (0 days)", n:1492, s:0},
-    {l:"1-7 days",  n:268, s:0.18},
-    {l:"8-14 days", n:13,  s:0.29},
-    {l:"15-30 days",n:23,  s:1.48},
-    {l:"31+ days",  n:72,  s:1566600.83}
-  ],
-  top10: [[9,914000,949189,0,0,1],[7,704000,731104,0,0,0],[5,600000,628260,0,0,0],[5,600000,628260,0,0,0],[5,500000,523550,0,0,0],[5,500000,523550,0,0,0],[4,500000,523550,0,0,0],[5,436000,455417.6,0,0,0],[6,418200,437897.22,0,0,0],[4,400000,418840,0,0,1]],
-  relend: [
-    {l:"Funded before previous loan was due, since settled", n:489},
-    {l:"Previous loan paid on time, confirmed", n:404},
-    {l:"Previous loan settled late, timing unconfirmed", n:135},
-    {l:"Previous loan unpaid when re-lent", n:0}
-  ],
-  checks: [
-    ["A","loan_amount differs from loan_amount_1",0,"pass","The two fields match on every row, so loan_amount_1 is redundant."],
-    ["B","Repaid above principal",1817,"info","Expected: repayments include interest and fees. Not an error."],
-    ["C","Paid loan with positive shortfall",72,"review","Paid loans hold 2.27 shillings in total: rounding residue, not unpaid balances."],
-    ["D","Late loan with zero shortfall",0,"pass","All 60 Late loans carry unpaid shortfall."],
-    ["E","Missing, invalid or out-of-order dates",0,"pass","Dates are complete, valid and in order."]
-  ]
+// Snapshot of query outputs. Edit this block to refresh the dashboard.
+const D={
+ monthly:[{m:"Mar",loans:56,principal:1719614,avg:30707.39,partial:1},{m:"Apr",loans:903,principal:33645283,avg:37259.45},{m:"May",loans:909,principal:33964033,avg:37364.17}],
+ buckets:[["Current",1492],["1-7",268],["8-14",13],["15-30",23],["31+",72]],
+ top10:[[9,914000,949189,0],[7,704000,731104,0],[5,600000,628260,0],[5,600000,628260,0],[5,500000,523550,0],[5,500000,523550,0],[4,500000,523550,0],[5,436000,455417.6,0],[6,418200,437897.22,0],[4,400000,418840,0]],
+ relend:[["Funded before previous loan was due, since settled",489],["Previous loan paid on time, confirmed",404],["Previous loan settled late, timing unconfirmed",135],["Previous loan unpaid when re-lent",0]],
+ checks:[["A","loan_amount vs loan_amount_1",0,"pass","Pass"],["B","Repaid above principal",1817,"pass","Info: expected"],["C","Paid, positive shortfall",72,"review","Review: 2.27 total"],["D","Late, zero shortfall",0,"pass","Pass"],["E","Missing or invalid dates",0,"pass","Pass"]],
+ kpis:[["Loans funded","1,868","840 customers",""],["Principal disbursed","69.33M","30 Mar to 30 May 2026",""],["Unpaid amount","1.57M","2.26% of principal disbursed","late"],["Proxy PAR30+","3.37%","2.98% with settled loans excluded","late"],["Paid loans","96.8%","1,808 Paid, 60 Late","ok"],["Borrowed again","80.12%","673 of 840, average gap 26.4 days","ok"]]
 };
-const fmt = n => n.toLocaleString("en-US",{maximumFractionDigits:2});
-const el = id => document.getElementById(id);
+const $=id=>document.getElementById(id),f=n=>n.toLocaleString("en-US",{maximumFractionDigits:2});
 
-// Hero: one square per loan, Paid first, then the 60 Late loans
-el("grid").innerHTML = "<i></i>".repeat(1808) + '<i class="late"></i>'.repeat(60);
+$("kpis").innerHTML=D.kpis.map(k=>`<div class="k ${k[3]}"><span class="l">${k[0]}</span><span class="v">${k[1]}</span><span class="s">${k[2]}</span></div>`).join("");
 
-function bars(id, rows, max, cls){
-  el(id).innerHTML = rows.map(r =>
-    `<div class="row"><span>${r.l}</span><div class="track"><div class="fill ${r.cls||cls||""}" style="width:${Math.max(r.v/max*100,r.v>0?0.6:0)}%"></div></div><span class="num">${r.t}</span></div>`
-  ).join("");
-}
-const mMax = Math.max(...D.monthly.map(x=>x.principal));
-bars("monthly", D.monthly.map(x=>({l:x.m, v:x.principal, t:`${fmt(x.principal)} · ${x.loans} loans`, cls:x.m==="March"?"late":""})), mMax, "");
-el("monthly").insertAdjacentHTML("beforeend", D.monthly.map(x=>`<p class="num" style="text-align:left;margin:0">${x.m}: ${x.note}</p>`).join(""));
-bars("status", [{l:"Paid", v:1808, t:"1,808 loans (96.8%)", cls:"ok"},{l:"Late", v:60, t:"60 loans (3.2%)", cls:"late"}], 1868, "");
-bars("buckets", D.buckets.map(b=>({l:b.l, v:b.n, t:`${fmt(b.n)} loans · ${fmt(b.s)} unpaid`, cls:b.l.startsWith("31")?"late":""})), 1492, "");
-bars("relend", D.relend.map(r=>({l:r.l, v:r.n, t:`${r.n} loans`})), 489, "");
+// Combo chart: bars = principal, line = average loan
+(function(){const W=580,H=270,L=44,R=46,T=16,B=34,iw=W-L-R,ih=H-T-B,mx=50e6,ax=50000;
+ const y=v=>T+ih-v/mx*ih,ya=v=>T+ih-v/ax*ih;let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Monthly principal disbursed as bars and average loan amount as a line">`;
+ [0,10,20,30,40,50].forEach(t=>{const g=y(t*1e6);s+=`<line x1="${L}" x2="${W-R}" y1="${g}" y2="${g}" class="gl"/><text x="${L-6}" y="${g+4}" class="ax" text-anchor="end">${t}M</text><text x="${W-R+6}" y="${g+4}" class="ax">${t}k</text>`});
+ const pts=[];D.monthly.forEach((m,i)=>{const cx=L+iw*(i+.5)/3,bw=80,top=y(m.principal),h=T+ih-top,inside=h>34;
+  s+=`<rect x="${cx-bw/2}" y="${top}" width="${bw}" height="${h}" class="${m.partial?"bp":"b"}"><title>${m.m}: ${f(m.principal)} shillings, ${m.loans} loans</title></rect>`;
+  s+=`<text x="${cx}" y="${inside?top+16:top-6}" class="${inside?"lw":"lb"}" text-anchor="middle">${(m.principal/1e6).toFixed(2)}M</text>`;
+  s+=`<text x="${cx}" y="${H-12}" class="ax" text-anchor="middle">${m.m}${m.partial?" (partial)":" ("+m.loans+" loans)"}</text>`;pts.push([cx,ya(m.avg)])});
+ s+=`<polyline points="${pts.map(p=>p.join(",")).join(" ")}" class="ln"/>`+pts.map((p,i)=>`<circle cx="${p[0]}" cy="${p[1]}" r="4.5" class="dt"><title>Average loan ${f(D.monthly[i].avg)} shillings</title></circle><text x="${p[0]}" y="${p[1]-10}" class="lr" text-anchor="middle">${f(Math.round(D.monthly[i].avg))}</text>`).join("");
+ $("combo").innerHTML=s+"</svg>"})();
 
-el("top10").innerHTML = D.top10.map((r,i)=>`<tr><td>Borrower ${i+1}</td><td class="r">${r[0]}</td><td class="r">${fmt(r[1])}</td><td class="r">${fmt(r[2])}</td><td class="r">${r[3]}</td><td class="r">${r[4]}</td><td class="r">${r[5]}</td></tr>`).join("");
-el("checkrows").innerHTML = D.checks.map(c=>`<tr><td>${c[0]}: ${c[1]}</td><td class="r">${fmt(c[2])}</td><td><span class="tag ${c[3]}">${c[3]==="info"?"Information":c[3]==="pass"?"Pass":"Review"}</span></td><td style="white-space:normal">${c[4]}</td></tr>`).join("");
+// Days-late column chart
+(function(){const W=520,H=230,L=10,T=22,B=40,iw=W-L*2,ih=H-T-B,mx=1600;let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Loans by days late bucket">`;
+ D.buckets.forEach((b,i)=>{const cx=L+iw*(i+.5)/5,h=Math.max(b[1]/mx*ih,2),yy=T+ih-h,late=b[0]==="31+";
+  s+=`<rect x="${cx-34}" y="${yy}" width="68" height="${h}" class="${late?"bl":"b"}"><title>${b[0]} days: ${b[1]} loans</title></rect><text x="${cx}" y="${yy-6}" class="lb" text-anchor="middle">${f(b[1])}</text><text x="${cx}" y="${H-20}" class="ax" text-anchor="middle">${b[0]}</text>`});
+ $("bk").innerHTML=s+`<line x1="${L}" x2="${W-L}" y1="${T+ih}" y2="${T+ih}" class="gl"/><text x="${W/2}" y="${H-4}" class="ax" text-anchor="middle">days late</text></svg>`})();
 
-const par = {b1:["3.37%","2,339,048 of 69,328,930 shillings (all loans 31+ days late, including 12 already settled)"], b2:["2.98%","2,065,592 of 69,328,930 shillings (31+ days late and still Late)"]};
-["b1","b2"].forEach(id => el(id).addEventListener("click", () => {
-  ["b1","b2"].forEach(o => el(o).setAttribute("aria-pressed", o===id));
-  el("par").textContent = par[id][0]; el("parnote").textContent = par[id][1];
-}));
+// Horizontal bars
+function hbars(id,rows,max,cls){$(id).innerHTML=rows.map(r=>`<div class="row"><span>${r[0]}</span><span>${r[2]}</span><div class="t"><div class="f ${cls||""}" style="width:${Math.max(r[1]/max*100,r[1]>0?1:0)}%"></div></div></div>`).join("")}
+hbars("rl",D.relend.map(r=>[r[0],r[1],`${r[1]} (${(r[1]/1028*100).toFixed(1)}%)`]),489);
+hbars("ustat",[["Late (60 loans)",1566600.51,"1,566,600.51"],["Paid (1,808 loans)",2.27,"2.27"]],1566600.51,"z");
+
+// Top 10 table
+$("t10").innerHTML=D.top10.map((r,i)=>`<tr><td>Borrower ${i+1}</td><td class="r">${r[0]}</td><td><span class="mini" style="width:${r[1]/914000*90}px"></span> ${f(r[1])}</td><td class="r">${f(r[2])}</td><td class="r">${(r[2]/r[1]).toFixed(3)}</td><td class="r">${r[3]}</td></tr>`).join("");
+
+// Checks
+$("ck").innerHTML=D.checks.map(c=>`<tr><td>${c[0]}</td><td>${c[1]}</td><td class="r">${f(c[2])}</td><td><span class="tag ${c[3]}">${c[4]}</span></td></tr>`).join("");
 </script>
 </body>
 </html>
